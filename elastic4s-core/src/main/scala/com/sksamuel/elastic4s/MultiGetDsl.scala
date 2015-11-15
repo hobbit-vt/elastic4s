@@ -25,7 +25,16 @@ class MultiGetDefinition(gets: Iterable[GetDefinition])
     with DefinitionAttributeRefresh {
 
   val _builder = new MultiGetRequestBuilder(ProxyClients.client)
-  gets.foreach(get => _builder.add(get.indexesTypes.index, get.indexesTypes.typ.orNull, get.id))
+  gets.foreach(get => {
+    val item = new MultiGetRequest.Item(get.indexesTypes.index, get.indexesTypes.typ.orNull, get.id)
+    item.routing(get.build.routing())
+    item.fields(get.build.fields(): _*)
+    item.version(get.build.version())
+    item.versionType(get.build.versionType())
+    item.fetchSourceContext(get.build.fetchSourceContext())
+
+    _builder.add(item)
+  })
   def build: MultiGetRequest = _builder.request()
 
   def realtime(realtime: Boolean): this.type = {
